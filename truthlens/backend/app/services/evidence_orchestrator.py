@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import List
 from urllib.parse import urlparse
 
@@ -8,55 +9,72 @@ from app.schemas.evidence import (
     NormalizedEvidenceItem,
 )
 from app.services.providers.free_news_api import FreeNewsProvider, FreeNewsAPIError
+from app.services.providers.google_fact_check import GoogleFactCheckProvider
+from app.services.verification_engine import VerificationEngine
 
 logger = logging.getLogger("truthlens.services.orchestrator")
 
 
 class EvidenceOrchestrator:
-    """Coordinates evidence retrieval across configured news and public record providers.
+    """Coordinates evidence retrieval and verification analysis across configured providers.
 
-    In Phase 3, queries Free News API as the foundational evidence candidate provider.
-    Designed for subsequent expansion to Brave Search, ClaimReview, and official gazette connectors.
+    Queries:
+    - Free News API for news search candidates
+    - Google Fact Check Tools API for existing fact checks
+    - Verification Engine for deterministic NLI stance, evidence scoring, and factual points
     """
 
-    def __init__(self, free_news_provider: FreeNewsProvider = None):
+    def __init__(
+        self,
+        free_news_provider: FreeNewsProvider = None,
+        google_fact_check_provider: GoogleFactCheckProvider = None,
+        verification_engine: VerificationEngine = None,
+    ):
         self.free_news_provider = free_news_provider or FreeNewsProvider()
+        self.google_fact_check_provider = google_fact_check_provider or GoogleFactCheckProvider()
+        self.verification_engine = verification_engine or VerificationEngine()
 
     async def search(self, request: EvidenceSearchRequest) -> EvidenceSearchResponse:
-        """Search evidence candidates for a validated claim.
-
-        Args:
-            request: Validated EvidenceSearchRequest containing claim and filters.
-
-        Returns:
-            EvidenceSearchResponse with deduplicated, normalized evidence items.
-        """
+        """Search evidence candidates and run verification analysis for a claim."""
+        start_time = time.time()
         safe_claim_preview = request.claim[:60] + "..." if len(request.claim) > 60 else request.claim
+        jurisdiction = request.jurisdiction or "Central Government / India"
+
         logger.info(
-            "[Orchestrator] Starting evidence search: query='%s' jurisdiction='%s' country='%s' lang='%s'",
+            "[Orchestrator] Starting evidence search & verification: query='%s' jurisdiction='%s' country='%s' lang='%s'",
             safe_claim_preview,
-            request.jurisdiction,
+            jurisdiction,
             request.country,
             request.language,
         )
 
-        logger.info("[Orchestrator] Dispatching to provider=free_news_api")
-
-        # 1. Fetch from provider
+        # 1. Fetch news articles from Free News API
         provider_data = await self.free_news_provider.search(
             claim=request.claim,
             country=request.country,
             language=request.language,
             date=request.date,
-            size=request.size or 10,
+            size=request.size or 15,
         )
 
         raw_items: List[NormalizedEvidenceItem] = provider_data.get("items", [])
-        logger.info("[Normalizer] received=%d normalized=%d", len(raw_items), len(raw_items))
-
-        # 2. Deterministic Deduplication
         deduped_items = self._deduplicate_items(raw_items)
-        logger.info("[Deduplication] before=%d after=%d", len(raw_items), len(deduped_items))
+
+        # 2. Fetch Google Fact Check API results if available
+        fact_check_api_results = await self.google_fact_check_provider.search_fact_checks(
+            claim=request.claim,
+            language_code=request.language or "en"
+        )
+
+        # 3. Run Verification Engine Analysis
+        analysis = self.verification_engine.analyze(
+            claim=request.claim,
+            jurisdiction=jurisdiction,
+            evidence_items=deduped_items,
+            fact_check_api_results=fact_check_api_results
+        )
+
+        took_ms = int((time.time() - start_time) * 1000)
 
         warning = None
         if not deduped_items:
@@ -64,21 +82,33 @@ class EvidenceOrchestrator:
 
         return EvidenceSearchResponse(
             claim=request.claim,
+            jurisdiction=jurisdiction,
+            country=request.country,
+            language=request.language,
             total_found=provider_data.get("total", len(deduped_items)),
             results_count=len(deduped_items),
             provider="free_news_api",
-            took_ms=provider_data.get("took_ms"),
-            results=deduped_items,
-            jurisdiction=request.jurisdiction,
+            took_ms=took_ms,
+            verdict=analysis["verdict"],
+            verdict_label=analysis["verdict_label"],
+            evidence_score=analysis["evidence_score"],
+            evidence_strength=analysis["evidence_strength"],
+            summary=analysis["summary"],
+            score_factors=analysis["score_factors"],
+            facts=analysis["facts"],
+            misleading_breakdown=analysis["misleading_breakdown"],
+            official_sources=analysis["official_sources"],
+            trusted_news_sources=analysis["trusted_news_sources"],
+            fact_checks=analysis["fact_checks"],
+            claim_breakdown=analysis["claim_breakdown"],
+            evidence_matrix=analysis["evidence_matrix"],
+            results=analysis["processed_items"],
             warning=warning,
         )
 
     @staticmethod
     def _deduplicate_items(items: List[NormalizedEvidenceItem]) -> List[NormalizedEvidenceItem]:
-        """Perform deterministic deduplication using canonical URL and/or article ID.
-
-        Normalizes URL by stripping trailing slashes, tracking query parameters (utm_*), and lowercase host.
-        """
+        """Perform deterministic deduplication using canonical URL and/or article ID."""
         seen_keys = set()
         deduped = []
 
@@ -87,7 +117,6 @@ class EvidenceOrchestrator:
             if item.source_url:
                 try:
                     parsed = urlparse(item.source_url)
-                    # Host + path without trailing slash
                     clean_path = parsed.path.rstrip("/")
                     canonical_key = f"{parsed.netloc.lower()}{clean_path}"
                 except Exception:

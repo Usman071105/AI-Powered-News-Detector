@@ -12,6 +12,7 @@ import {
   FileSearch
 } from 'lucide-react';
 import { searchEvidence } from '../services/api';
+import VerificationPipelineModal from '../components/VerificationPipelineModal';
 
 export const JURISDICTIONS = [
   { id: 'central', name: 'Central Government / India', description: 'PIB, The Gazette of India, Union Ministries' },
@@ -60,6 +61,8 @@ export default function HomePage() {
   // Controlled form state
   const [headline, setHeadline] = useState('');
   const [newsUrl, setNewsUrl] = useState('');
+  const [jurisdiction, setJurisdiction] = useState('Central Government / India');
+  const [language, setLanguage] = useState('English');
 
   // Validation & Submission state
   const [formErrors, setFormErrors] = useState({});
@@ -123,19 +126,20 @@ export default function HomePage() {
     // 2. Submission progression
     setFormErrors({});
     setIsSubmitting(true);
-    setSubmissionFeedback({
-      type: 'info',
-      message: 'Querying Free News API via TruthLens Evidence Orchestrator...',
-    });
+
+    const langCode = language.toLowerCase().includes('telugu') ? 'te' : language.toLowerCase().includes('tamil') ? 'ta' : 'en';
 
     try {
       const result = await searchEvidence({
         claim: headline.trim(),
-        jurisdiction: 'Central Government / India',
-        language: 'en',
+        jurisdiction: jurisdiction,
+        language: langCode,
         country: 'IN',
-        size: 10,
+        size: 15,
       });
+
+      // Brief delay to let user experience final stage of pipeline animation
+      await new Promise(res => setTimeout(res, 800));
 
       setIsSubmitting(false);
 
@@ -145,7 +149,10 @@ export default function HomePage() {
             headline: headline.trim(),
             url: newsUrl.trim(),
             newsUrl: newsUrl.trim(),
+            jurisdiction: jurisdiction,
+            language: language,
             submittedAt: new Date().toISOString(),
+            ...result.data,
             evidenceResults: result.data.results || [],
             evidenceTotal: result.data.total_found || 0,
             evidenceCount: result.data.results_count || 0,
@@ -161,6 +168,8 @@ export default function HomePage() {
             headline: headline.trim(),
             url: newsUrl.trim(),
             newsUrl: newsUrl.trim(),
+            jurisdiction: jurisdiction,
+            language: language,
             submittedAt: new Date().toISOString(),
             evidenceResults: [],
             evidenceTotal: 0,
@@ -182,6 +191,8 @@ export default function HomePage() {
 
   return (
     <div className="space-y-16 py-10">
+      <VerificationPipelineModal isOpen={isSubmitting} claim={headline} jurisdiction={jurisdiction} />
+
       {/* 1. HERO SECTION */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-950/80 border border-sky-800/70 text-sky-300 text-xs font-medium">
@@ -195,13 +206,8 @@ export default function HomePage() {
         </h1>
 
         <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-          TruthLens is engineered to validate assertions through traceable evidence. The platform is designed to extract claims, detect jurisdiction and language, retrieve official government gazettes, and compare assertions using explainable inference.
+          TruthLens is engineered to validate assertions through traceable evidence. The platform extracts claims, detects jurisdiction and language, retrieves official government gazettes, and evaluates assertions using explainable inference.
         </p>
-
-        {/* Phase 3 Scope Notice */}
-        <div className="inline-block max-w-xl mx-auto p-3 rounded-lg bg-slate-900/90 border border-slate-800 text-xs text-slate-400">
-          <span className="font-semibold text-slate-200">Phase 3 Status:</span> Real evidence candidate retrieval layer active via Free News API provider. Natural Language Inference (NLI) and ClaimReview matching scheduled for upcoming releases.
-        </div>
 
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
           <button
@@ -218,7 +224,7 @@ export default function HomePage() {
             onClick={() => navigate('/results')}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-slate-800/90 hover:bg-slate-800 text-slate-200 hover:text-white font-medium text-sm border border-slate-700 transition-colors cursor-pointer"
           >
-            <span>View Results Presentation Shell</span>
+            <span>View Verification Results Page</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
@@ -249,43 +255,43 @@ export default function HomePage() {
                 </span>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Provide a news headline or article URL. The engine automatically detects jurisdiction and language to route verification against primary evidence sources.
+                Provide a news headline or article URL. Select target jurisdiction and language to route verification against primary evidence sources.
               </p>
             </div>
           </div>
 
           {/* Card 2 */}
-          <div className="p-6 rounded-xl bg-slate-900/60 border border-slate-800 relative space-y-3">
-            <div className="w-10 h-10 rounded-lg bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400 font-bold text-sm">
+          <div className="p-6 rounded-xl bg-slate-900 border border-sky-800/40 relative space-y-3 shadow-md">
+            <div className="w-10 h-10 rounded-lg bg-sky-950 border border-sky-800 flex items-center justify-center text-sky-400 font-bold text-sm">
               02
             </div>
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold text-slate-200">2. Retrieve Relevant Evidence</h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
-                  UPCOMING
+                <h3 className="text-base font-semibold text-white">2. Retrieve Evidence</h3>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800">
+                  ACTIVE
                 </span>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                The engine will query Brave Search and official state gazettes (PIB, GoAP, GoTS, TN DIPR) to aggregate primary source records.
+                Queries Google Fact Check Tools, Free News search corpus, and official state gazettes (PIB, GoAP, GoTS, TN DIPR) for primary source records.
               </p>
             </div>
           </div>
 
           {/* Card 3 */}
-          <div className="p-6 rounded-xl bg-slate-900/60 border border-slate-800 relative space-y-3">
-            <div className="w-10 h-10 rounded-lg bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400 font-bold text-sm">
+          <div className="p-6 rounded-xl bg-slate-900 border border-sky-800/40 relative space-y-3 shadow-md">
+            <div className="w-10 h-10 rounded-lg bg-sky-950 border border-sky-800 flex items-center justify-center text-sky-400 font-bold text-sm">
               03
             </div>
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold text-slate-200">3. Compare Claim With Evidence</h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
-                  UPCOMING
+                <h3 className="text-base font-semibold text-white">3. Evaluate &amp; Score</h3>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800">
+                  ACTIVE
                 </span>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Natural Language Inference (NLI) will evaluate entailment and contradiction against retrieved evidence, generating a traceable synthesis.
+                Determines stance (Supported, Contradicted, Misleading, Insufficient), generates 5–8 factual points, and computes an Evidence Support Score.
               </p>
             </div>
           </div>
@@ -364,6 +370,47 @@ export default function HomePage() {
               )}
             </div>
 
+            {/* Jurisdiction & Language Selection Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label htmlFor="jurisdiction-select" className="block text-xs font-medium text-slate-300">
+                  Target Jurisdiction
+                </label>
+                <select
+                  id="jurisdiction-select"
+                  value={jurisdiction}
+                  onChange={(e) => setJurisdiction(e.target.value)}
+                  disabled={isSubmitting}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
+                >
+                  {JURISDICTIONS.map((j) => (
+                    <option key={j.id} value={j.name}>
+                      {j.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="language-select" className="block text-xs font-medium text-slate-300">
+                  Target Language
+                </label>
+                <select
+                  id="language-select"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  disabled={isSubmitting}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
+                >
+                  {LANGUAGES.map((l) => (
+                    <option key={l.id} value={l.name}>
+                      {l.name} ({l.native})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             {/* 2. Article URL (Optional) */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
@@ -398,7 +445,7 @@ export default function HomePage() {
             <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-xs text-slate-400 flex items-center gap-2">
                 <Clock className="w-4 h-4 text-sky-400 flex-shrink-0" />
-                <span>Phase 2: Submissions route to the structured results presentation shell.</span>
+                <span>Verification routes through automated evidence retrieval &amp; scoring pipeline.</span>
               </div>
 
               <button
@@ -409,7 +456,7 @@ export default function HomePage() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Submitting Claim...</span>
+                    <span>Verifying Claim...</span>
                   </>
                 ) : (
                   <>
@@ -431,7 +478,7 @@ export default function HomePage() {
             <span>Product Philosophy &amp; Verification Integrity</span>
           </div>
           <p className="text-xs text-slate-300 leading-relaxed">
-            TruthLens is designed around <span className="text-white font-medium">evidence retrieval and explainability</span> rather than simply asking an AI model whether a claim is true. The platform avoids opaque black-box verdicts or ungrounded confidence percentages. Every assessment will link directly to cited official documentation, verifiable gazettes, and reputable news records.
+            TruthLens is designed around <span className="text-white font-medium">evidence retrieval and explainability</span> rather than asking an AI model to render ungrounded opinions. Every assessment links directly to cited official documentation, verifiable gazettes, and reputable news records.
           </p>
           <div className="text-[11px] text-slate-400 font-mono pt-1">
             "Evidence first, explanation second."
