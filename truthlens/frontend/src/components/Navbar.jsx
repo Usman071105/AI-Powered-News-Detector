@@ -9,7 +9,7 @@ import {
   AlertCircle,
   Menu,
   X,
-  HelpCircle
+  Sparkles
 } from 'lucide-react';
 import { checkHealth } from '../services/api';
 
@@ -43,7 +43,6 @@ export default function Navbar() {
 
   useEffect(() => {
     verifyBackendStatus();
-    // Periodic check every 30 seconds
     const interval = setInterval(verifyBackendStatus, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -62,41 +61,43 @@ export default function Navbar() {
   };
 
   return (
-    <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Brand Logo & Title */}
-          <div className="flex items-center gap-3">
-            <NavLink 
-              to="/" 
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2.5 group"
-            >
-              <div className="w-9 h-9 rounded-lg bg-sky-600 flex items-center justify-center text-white shadow-md shadow-sky-900/40 group-hover:bg-sky-500 transition-colors">
-                <ShieldCheck className="w-5 h-5" />
+          <NavLink 
+            to="/" 
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-3 group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:bg-blue-700 transition-colors">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#1E3A8A]">
+                  TruthLens
+                </span>
+                <span className="text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 hidden sm:inline-block">
+                  AI Verification
+                </span>
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl font-bold tracking-tight text-white">TruthLens</span>
-                  <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-slate-800 text-sky-400 border border-slate-700">
-                    Phase 2
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 hidden sm:block">Evidence-Based News &amp; Claim Verification</p>
-              </div>
-            </NavLink>
-          </div>
+              <p className="text-[11px] text-slate-500 font-medium leading-none">
+                Evidence-Based News &amp; Claim Verification
+              </p>
+            </div>
+          </NavLink>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1 sm:gap-2">
+          <nav className="hidden md:flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-100/80 border border-slate-200">
             <NavLink
               to="/"
               end
               className={({ isActive }) =>
-                `flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                `px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                   isActive
-                    ? 'bg-slate-800 text-sky-400 border border-slate-700/80'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                    ? 'bg-white text-blue-700 shadow-sm border border-slate-200'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
                 }`
               }
             >
@@ -106,133 +107,111 @@ export default function Navbar() {
             <button
               type="button"
               onClick={handleVerifyClick}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 transition-all cursor-pointer"
             >
-              <FileText className="w-4 h-4" />
+              <FileText className="w-3.5 h-3.5 text-blue-600" />
               <span>Verify Claim</span>
             </button>
 
             <NavLink
               to="/results"
               className={({ isActive }) =>
-                `flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                `flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                   isActive
-                    ? 'bg-slate-800 text-sky-400 border border-slate-700/80'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                    ? 'bg-white text-blue-700 shadow-sm border border-slate-200'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
                 }`
               }
             >
-              <Activity className="w-4 h-4" />
+              <Activity className="w-3.5 h-3.5 text-teal-600" />
               <span>Results</span>
             </NavLink>
 
             <NavLink
               to="/history"
               className={({ isActive }) =>
-                `flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                `flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                   isActive
-                    ? 'bg-slate-800 text-sky-400 border border-slate-700/80'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                    ? 'bg-white text-blue-700 shadow-sm border border-slate-200'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
                 }`
               }
             >
-              <History className="w-4 h-4" />
+              <History className="w-3.5 h-3.5 text-violet-600" />
               <span>History</span>
             </NavLink>
           </nav>
 
-          {/* Right Area: Status and Mobile Menu Button */}
+          {/* Right Area: Backend Status Indicator */}
           <div className="flex items-center gap-3">
-            {/* Backend Status Indicator */}
             <button
               onClick={verifyBackendStatus}
-              title="Click to re-check backend /api/health status"
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-mono border bg-slate-950/70 transition-colors hover:bg-slate-950 border-slate-800 cursor-pointer"
+              title="Click to re-check backend status"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-mono border bg-slate-50 border-slate-200 transition-colors hover:bg-slate-100 cursor-pointer"
             >
-              <span className="text-slate-400 text-[11px] hidden lg:inline">Backend:</span>
               {healthStatus.loading ? (
-                <span className="flex items-center gap-1.5 text-amber-400">
-                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                  Checking...
+                <span className="flex items-center gap-1.5 text-amber-700">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                  <span className="text-[11px] font-medium">Checking...</span>
                 </span>
               ) : healthStatus.connected ? (
-                <span className="flex items-center gap-1.5 text-emerald-400">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Online</span>
+                <span className="flex items-center gap-1.5 text-emerald-700 font-semibold">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+                  </span>
+                  <span className="text-[11px]">Backend Online</span>
                 </span>
               ) : (
-                <span className="flex items-center gap-1.5 text-rose-400">
-                  <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
-                  <span>Offline</span>
+                <span className="flex items-center gap-1.5 text-rose-700 font-semibold">
+                  <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                  <span className="text-[11px]">Backend Offline</span>
                 </span>
               )}
             </button>
 
-            {/* Mobile menu hamburger button */}
+            {/* Mobile Menu Button */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 focus:outline-none"
-              aria-label="Toggle navigation menu"
+              className="md:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile dropdown menu */}
+        {/* Mobile Dropdown Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-800 py-3 space-y-1 bg-slate-900/95">
+          <div className="md:hidden border-t border-slate-200 py-3 space-y-1 bg-white animate-fadeIn">
             <NavLink
               to="/"
               end
               onClick={() => setMobileMenuOpen(false)}
-              className={({ isActive }) =>
-                `block px-3 py-2 rounded-md text-base font-medium ${
-                  isActive
-                    ? 'bg-slate-800 text-sky-400'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                }`
-              }
+              className="block px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-800 hover:bg-slate-100"
             >
               Home
             </NavLink>
-
             <button
               type="button"
               onClick={handleVerifyClick}
-              className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:text-white hover:bg-slate-800/60"
+              className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-800 hover:bg-slate-100"
             >
-              <FileText className="w-4 h-4" />
-              <span>Verify Claim</span>
+              Verify Claim
             </button>
-
             <NavLink
               to="/results"
               onClick={() => setMobileMenuOpen(false)}
-              className={({ isActive }) =>
-                `block px-3 py-2 rounded-md text-base font-medium ${
-                  isActive
-                    ? 'bg-slate-800 text-sky-400'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                }`
-              }
+              className="block px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-800 hover:bg-slate-100"
             >
-              Results Presentation
+              Results
             </NavLink>
-
             <NavLink
               to="/history"
               onClick={() => setMobileMenuOpen(false)}
-              className={({ isActive }) =>
-                `block px-3 py-2 rounded-md text-base font-medium ${
-                  isActive
-                    ? 'bg-slate-800 text-sky-400'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                }`
-              }
+              className="block px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-800 hover:bg-slate-100"
             >
-              History Placeholder
+              History
             </NavLink>
           </div>
         )}
